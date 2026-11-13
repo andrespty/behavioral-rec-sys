@@ -20,10 +20,10 @@ def evaluate(model, users, items, seen, batch_size=1024):
     model.eval()
     totals = {"recall@10": 0.0, "recall@20": 0.0, "ndcg@10": 0.0, "ndcg@20": 0.0, "loglik": 0.0}
     confidence, correct = [], []
-
+    emb = model.embeddings()
     for start in range(0, len(users), batch_size):
         u, i = users[start:start + batch_size], items[start:start + batch_size]
-        logits = model.logits(u)
+        logits = model.logits(u, emb=emb)  # shape: (batch, n_items)
 
         # Remove items the user already rated (but never the item being tested).
         mask = seen[u].clone()

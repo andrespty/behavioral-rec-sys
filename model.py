@@ -49,7 +49,7 @@ class BehavioralRecommender(nn.Module):
         nn.init.normal_(self.embedding.weight, std=0.1)
 
         # We learn log(lambda), so lambda = exp(...) is always positive.
-        start = math.log(5.0)
+        start = math.log(1.0)
         if rationality == "global":
             self.log_lambda = nn.Parameter(torch.tensor(start))
         elif rationality == "user":
@@ -67,7 +67,7 @@ class BehavioralRecommender(nn.Module):
                 e = torch.sparse.mm(self.graph, e)
                 layers.append(e)
             e = torch.stack(layers).mean(dim=0)
-        return e[: self.n_users], e[self.n_users :]
+        return e[: self.n_users], e[self.n_users :]  # embeddings for users, embeddings for items
 
     def lam(self, users):
         if self.rationality == "global":
@@ -76,9 +76,9 @@ class BehavioralRecommender(nn.Module):
             return torch.exp(self.log_lambda[users])
         return torch.ones(len(users))
 
-    def logits(self, users):
+    def logits(self, users, emb=None):
         """lambda_u * U(u, j) for every item j. Shape: (batch, n_items)."""
-        z_users, z_items = self.embeddings()
+        z_users, z_items = emb if emb is not None else self.embeddings()
         z_u = z_users[users]
         if self.rationality == "none":
             return z_u @ z_items.T
